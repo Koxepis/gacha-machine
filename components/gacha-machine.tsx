@@ -61,6 +61,23 @@ export default function GachaMachine() {
   const [showPrize, setShowPrize] = useState(false)
   const [dimBackground, setDimBackground] = useState(false)
 
+  // Floating prize ball overlay (for center + open animation)
+  const [floatingBall, setFloatingBall] = useState<
+    | null
+    | {
+        left: number
+        top: number
+        size: number
+        hue: number
+        borderHue: number
+        dx: number
+        dy: number
+        atCenter: boolean
+        opening: boolean
+        fade: boolean
+      }
+  >(null)
+
   const machineRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLImageElement>(null)
   const prizeBallRef = useRef<HTMLDivElement>(null)
@@ -128,21 +145,6 @@ export default function GachaMachine() {
     }, 2000)
   }, [gameState])
 
-  const pickupBall = useCallback(() => {
-    if (gameState !== "dropping") return
-
-    setShowHint2(false)
-    setDimBackground(true)
-    setGameState("revealing")
-
-    // Start confetti
-    createConfetti()
-
-    setTimeout(() => {
-      setShowPrize(true)
-    }, 1500)
-  }, [gameState])
-
   const createConfetti = useCallback(() => {
     const particles: Particle[] = []
 
@@ -187,6 +189,62 @@ export default function GachaMachine() {
     }, 16)
   }, [])
 
+  const pickupBall = useCallback(() => {
+    if (gameState !== "dropping") return
+
+    setShowHint2(false)
+
+    // Prepare a floating ball overlay from the current prize ball position
+    const el = prizeBallRef.current
+    const sourceBall = balls.find((b) => b.id === prizeBallId)
+    if (!el || !sourceBall) return
+
+    const rect = el.getBoundingClientRect()
+    const size = rect.width
+    const left = rect.left
+    const top = rect.top
+
+    const centerLeft = window.innerWidth / 2 - size / 2
+    const centerTop = window.innerHeight / 2 - size / 2
+
+    const dx = centerLeft - left
+    const dy = centerTop - top
+
+    setFloatingBall({
+      left,
+      top,
+      size,
+      hue: sourceBall.hue,
+      borderHue: sourceBall.hue,
+      dx,
+      dy,
+      atCenter: false,
+      opening: false,
+      fade: false,
+    })
+
+    // Move to center (next frame to trigger transition)
+    setTimeout(() => {
+      setFloatingBall((prev) => (prev ? { ...prev, atCenter: true } : prev))
+    }, 30)
+
+    // After move completes, open the ball and reveal
+    setTimeout(() => {
+      setFloatingBall((prev) => (prev ? { ...prev, opening: true } : prev))
+      setDimBackground(true)
+      setGameState("revealing")
+      createConfetti()
+
+      // Show prize shortly after opening starts
+      setTimeout(() => {
+        setShowPrize(true)
+        setFloatingBall((prev) => (prev ? { ...prev, fade: true } : prev))
+      }, 700)
+    }, 750)
+  }, [gameState, balls, prizeBallId])
+
+  // (moved above)
+
   useEffect(() => {
     return () => {
       if (confettiIntervalRef.current) {
@@ -194,6 +252,14 @@ export default function GachaMachine() {
       }
     }
   }, [])
+
+  // Cleanup floating overlay once faded
+  useEffect(() => {
+    if (floatingBall?.fade) {
+      const t = setTimeout(() => setFloatingBall(null), 800)
+      return () => clearTimeout(t)
+    }
+  }, [floatingBall?.fade])
 
   const prizeBall = balls.find((ball) => ball.id === prizeBallId)
 
@@ -257,7 +323,10 @@ export default function GachaMachine() {
                   "ball absolute rounded-full border-[0.8vh] overflow-hidden transition-all duration-500",
                   isJittering && "animate-jitter",
                   gameState === "dropping" && ball.id === prizeBallId && "animate-ball-drop cursor-pointer",
-                  gameState === "revealing" && ball.id === prizeBallId && "opacity-0",
+                  // Hide the original prize ball when the floating overlay is active or during reveal
+                  ((gameState === "revealing" && ball.id === prizeBallId) ||
+                    (floatingBall && ball.id === prizeBallId)) &&
+                    "opacity-0",
                 )}
                 style={{
                   width: `${ball.size}vh`,
@@ -333,6 +402,111 @@ export default function GachaMachine() {
 
       {/* UI Layer */}
       <div className="ui-layer absolute inset-0 z-[1] pointer-events-none">
+        {/* Floating prize ball overlay (centers, then opens) */}
+        {floatingBall && (
+          <div
+            className="fixed inset-0 z-20"
+            aria-hidden
+            style={{ pointerEvents: "none" }}
+          >
+            <div
+              className="absolute"
+              style={{
+                left: floatingBall.left,
+                top: floatingBall.top,
+                width: floatingBall.size,
+                height: floatingBall.size,
+              }}
+            >
+              <div
+                className={cn(
+                  "relative w-full h-full overflow-visible transition-[transform,opacity] duration-700 ease-out",
+                )}
+                style={{
+                  transform: floatingBall.atCenter
+                    ? `translate(${floatingBall.dx}px, ${floatingBall.dy}px)`
+                    : "translate(0px, 0px)",
+                  opacity: floatingBall.fade ? 0 : 1,
+                }}
+              >
+                {/* Two halves composing the ball */}
+                <div
+                  className={cn(
+                    "absolute left-0 top-0 w-full h-1/2 relative",
+                    floatingBall.opening ? "overflow-visible" : "overflow-hidden",
+                  )}
+                >
+                  {/* animated circular gloss behind top half */}
+                  <div
+                    className={cn(
+                      "absolute left-1/2 top-1/2 z-0 pointer-events-none rounded-full",
+                      "transition-[transform,opacity] duration-500 ease-out",
+                    )}
+                    style={{
+                      width: "220%",
+                      height: "220%",
+                      transform: floatingBall.opening
+                        ? "translate(-50%, -50%) scale(1)"
+                        : "translate(-50%, -50%) scale(0.7)",
+                      opacity: floatingBall.opening ? 0.6 : 0.3,
+                      background: `radial-gradient(circle at 35% 30%, hsla(${floatingBall.hue + 20}, 50%, 96%, 0.9) 0%, hsla(${floatingBall.hue + 20}, 50%, 92%, 0.55) 22%, transparent 55%)`,
+                      filter: "blur(0.5px)",
+                    }}
+                  />
+                  <div
+                    className={cn(
+                      "relative z-10 w-full h-full rounded-t-full border-[0.8vh] transition-transform duration-500 ease-out",
+                    )}
+                    style={{
+                      backgroundColor: `hsl(${floatingBall.hue}deg, 80%, 70%)`,
+                      borderColor: `hsl(${floatingBall.borderHue}deg, 50%, 55%)`,
+                      transform: floatingBall.opening
+                        ? "translateY(-60%) rotate(-10deg)"
+                        : "translateY(0px)",
+                    }}
+                  />
+                </div>
+                <div
+                  className={cn(
+                    "absolute left-0 bottom-0 w-full h-1/2 relative",
+                    floatingBall.opening ? "overflow-visible" : "overflow-hidden",
+                  )}
+                >
+                  {/* animated circular gloss behind bottom half */}
+                  <div
+                    className={cn(
+                      "absolute left-1/2 top-1/2 z-0 pointer-events-none rounded-full",
+                      "transition-[transform,opacity] duration-500 ease-out",
+                    )}
+                    style={{
+                      width: "220%",
+                      height: "220%",
+                      transform: floatingBall.opening
+                        ? "translate(-50%, -50%) scale(1)"
+                        : "translate(-50%, -50%) scale(0.7)",
+                      opacity: floatingBall.opening ? 0.55 : 0.25,
+                      background: `radial-gradient(circle at 65% 70%, hsla(${floatingBall.hue + 20}, 50%, 96%, 0.85) 0%, hsla(${floatingBall.hue + 20}, 50%, 92%, 0.45) 22%, transparent 55%)`,
+                      filter: "blur(0.5px)",
+                    }}
+                  />
+                  <div
+                    className={cn(
+                      "relative z-10 w-full h-full rounded-b-full border-[0.8vh] transition-transform duration-500 ease-out",
+                    )}
+                    style={{
+                      backgroundColor: `hsl(${floatingBall.hue}deg, 80%, 70%)`,
+                      borderColor: `hsl(${floatingBall.borderHue}deg, 50%, 55%)`,
+                      transform: floatingBall.opening
+                        ? "translateY(60%) rotate(10deg)"
+                        : "translateY(0px)",
+                    }}
+                  />
+                </div>
+                {/* Removed gloss highlight to avoid white trailing circle */}
+              </div>
+            </div>
+          </div>
+        )}
         {/* Title Container */}
         <div className="title-container absolute inset-0 z-10">
           <div

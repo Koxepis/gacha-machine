@@ -1,0 +1,13 @@
+ ⨯ Failed to start server
+Error: listen EPERM: operation not permitted 127.0.0.1:4000
+    at Server.setupListenHandle [as _listen2] (node:net:1915:21)
+    at listenInCluster (node:net:1994:12)
+    at node:net:2203:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EPERM',
+  errno: -1,
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 4000
+}
+[?25h
