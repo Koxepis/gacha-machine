@@ -94,7 +94,7 @@ export default function Page() {
 
     const init = async () => {
       $app = document.querySelector('#app') as HTMLElement;
-      $app.classList.add('gotcha');
+      $app.classList.add('gacha');
       getPrize().then(e => {
         prize = e;
         const pimg = document.querySelector('.prize-container .prize img') as HTMLImageElement;
@@ -182,7 +182,8 @@ export default function Page() {
         pickup();
       }, { once: true });
 
-      await delay(2000);
+      // Shorten hint delay so it appears sooner after the ball settles
+      await delay(800);
       if (shouldShowHint) showHint2();
     }
 
@@ -197,10 +198,12 @@ export default function Page() {
       addAnimClass('.game-layer', 'dim');
       (prizeBall.dom as HTMLElement).style.left = '0';
       (prizeBall.dom as HTMLElement).style.top = '0';
-      gsap.set(prizeBall.dom, { x: `${x}vh`, y: `${y}vh`, rotate, duration: 1 });
-      gsap.to('.prize-container .prize-ball-container', { x: `-4vh`, y: `-4vh`, duration: 1 });
+      // place the ball where it currently is, then animate it to screen center
+      gsap.set(prizeBall.dom, { x: `${x}vh`, y: `${y}vh`, rotate, duration: 1, xPercent: 0, yPercent: 0 });
+      // ensure prize overlay can receive clicks when shown
+      gsap.set('.prize-reward-container', { pointerEvents: 'none' });
       const tl = gsap.timeline();
-      tl.to(prizeBall.dom, { x: '50vw', y: '50vh', scale: 2, rotate: -180, duration: 1 })
+      tl.to(prizeBall.dom, { x: '50vw', y: '50vh', xPercent: -50, yPercent: -50, scale: 2, rotate: -180, duration: 1 })
         .to(prizeBall.dom, { duration: 0.1, scaleX: 2.1, ease: 'power1.inOut', scaleY: 1.9 })
         .to(prizeBall.dom, { duration: 0.1, ease: 'power1.inOut', scaleX: 1.9, scaleY: 2.1 })
         .to(prizeBall.dom, { duration: 0.1, ease: 'power1.inOut', scaleX: 2.1, scaleY: 1.9 })
@@ -212,7 +215,13 @@ export default function Page() {
 
       function pop() {
         confetti(document.body, { count: 120, x: 50, y: 45, speedY: -1.5, gravity: 0.02 });
-        gsap.to('.prize-reward-container', { opacity: 1, duration: 0.5 });
+        gsap.to('.prize-reward-container', { opacity: 1, duration: 0.5, onStart: () => { gsap.set('.prize-reward-container', { pointerEvents: 'auto' }); } });
+        // reveal claim button
+        const btn = document.getElementById('claim-btn');
+        if (btn) {
+          gsap.set(btn, { opacity: 0, y: 8, pointerEvents: 'none' });
+          gsap.to(btn, { opacity: 1, y: 0, duration: 0.4, delay: 0.3, onComplete: () => { btn.style.pointerEvents = 'auto'; } });
+        }
       }
     }
 
@@ -324,11 +333,24 @@ export default function Page() {
       await delay(200);
     }
 
+    const resetGame = () => {
+      // simplest reliable reset
+      window.location.reload();
+    }
+
+    // attach claim listener if present later
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target && target.id === 'claim-btn') {
+        resetGame();
+      }
+    });
+
     init();
   }, []);
 
   return (
-    <div id="app" className="gotcha">
+    <div id="app" className="gacha">
       <div className="container">
         <div className="game-layer">
           <div className="machine-container">
@@ -357,6 +379,11 @@ export default function Page() {
               </div>
               <div className="prize">
                 <img className="wiggle" src="" alt="Prize" />
+              </div>
+              <div className="actions" style={{ position: 'absolute', bottom: '10vh', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <button id="claim-btn" className="px-6 py-3 rounded-xl bg-pink-500 text-white font-semibold shadow-md hover:bg-pink-600 active:scale-95 transition" type="button">
+                  Claim Prize
+                </button>
               </div>
             </div>
           </div>
