@@ -394,6 +394,12 @@ export default function Page() {
             gsap.set(".prize-reward-container", { pointerEvents: "auto" });
           },
         });
+        // Lazy-load the shine image at reveal time to avoid initial request
+        const shine = document.getElementById("shine-img") as HTMLImageElement | null;
+        if (shine && !shine.getAttribute("src")) {
+          const ds = shine.getAttribute("data-src");
+          if (ds) shine.setAttribute("src", ds);
+        }
         // Remove prize-ball overlay container so it doesn't block the UI
         const prizeBallContainer = document.querySelector(
           ".prize-container .prize-ball-container",
@@ -584,7 +590,7 @@ export default function Page() {
             <div className="absolute top-[22%] left-[2%] w-[96%] h-[34.5%] balls"></div>
             <img
               className="relative z-[10] max-h-[80vh] pointer-events-none"
-              src="/assets/gotcha.svg"
+              src="/assets/gacha.svg"
               alt="Gacha machine"
             />
             <div className="absolute top-[10%] w-full text-center text-[5vh] z-[15] drop-shadow title"></div>
@@ -616,9 +622,10 @@ export default function Page() {
             <div className="absolute inset-0 z-[1] prize-reward-container">
               <div className="absolute inset-0 flex items-center justify-center shine">
                 <img
+                  id="shine-img"
                   className="h-[100vh] animate-[spin_5s_linear_infinite_forwards]"
-                  src="/assets/shine.png"
                   alt="Shine"
+                  data-src="/assets/shine.png"
                 />
               </div>
               <div className="absolute inset-0 flex items-center justify-center prize">
