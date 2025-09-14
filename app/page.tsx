@@ -125,6 +125,32 @@ export default function Page() {
       return prizes[~~(prizes.length * Math.random())];
     };
 
+    // Wait until pointer image is loaded (present in DOM) and fonts are ready
+    const waitForPointer = async () => {
+      const img = document.querySelector(
+        ".machine-container .pointer img",
+      ) as HTMLImageElement | null;
+      if (!img) return;
+      if (img.complete) return;
+      await new Promise<void>((resolve) => {
+        img.addEventListener("load", () => resolve(), { once: true });
+        img.addEventListener("error", () => resolve(), { once: true });
+      });
+    };
+
+    const waitForFonts = async () => {
+      // Guard for browsers without Font Loading API
+      // @ts-ignore
+      const fonts = document.fonts;
+      if (fonts && typeof fonts.ready?.then === "function") {
+        try {
+          await fonts.ready;
+        } catch (_) {
+          // ignore font load errors; continue
+        }
+      }
+    };
+
     const init = async () => {
       $app = document.querySelector("#app") as HTMLElement;
       $app.classList.add("gacha");
@@ -175,8 +201,12 @@ export default function Page() {
         ease: "none",
         duration: 0.6,
         onComplete() {
-          $handle.style.cursor = "pointer";
-          $handle.addEventListener("click", start, { once: true });
+          // Enable handle only after pointer image and fonts are ready
+          (async () => {
+            await Promise.all([waitForPointer(), waitForFonts()]);
+            $handle.style.cursor = "pointer";
+            $handle.addEventListener("click", start, { once: true });
+          })();
           balls.forEach((ball: any) => {
             const tl = gsap.timeline();
             const duration = 0.05 + Math.random() * 0.1;
@@ -264,22 +294,31 @@ export default function Page() {
             });
         }))();
 
-      prizeBall.dom.style.cursor = "pointer";
+      // Defer enabling prize-ball click until pointer + fonts are ready and hint is visible
+      prizeBall.dom.style.cursor = "default";
+      (prizeBall.dom as HTMLElement).style.pointerEvents = "none";
       let shouldShowHint = true;
+
+      // Shorten hint delay so it appears sooner after the ball settles
+      await delay(800);
+      if (shouldShowHint) {
+        await Promise.all([waitForPointer(), waitForFonts()]);
+        showHint2();
+      }
+
+      prizeBall.dom.style.cursor = "pointer";
+      (prizeBall.dom as HTMLElement).style.pointerEvents = "auto";
       prizeBall.dom.addEventListener(
         "click",
         () => {
           prizeBall.dom.style.cursor = "default";
+          (prizeBall.dom as HTMLElement).style.pointerEvents = "none";
           shouldShowHint = false;
           hideHint();
           pickup();
         },
         { once: true },
       );
-
-      // Shorten hint delay so it appears sooner after the ball settles
-      await delay(800);
-      if (shouldShowHint) showHint2();
     };
 
     const pickup = () => {
