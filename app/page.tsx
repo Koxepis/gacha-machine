@@ -283,9 +283,17 @@ export default function Page() {
     };
 
     const pickup = () => {
+      // Ensure all hint UI is fully hidden above the reveal animation
+      gsap.set(".title-container", { opacity: 0, pointerEvents: "none" });
+      gsap.set($pointer, { opacity: 0, pointerEvents: "none" });
+
+      // Also fade the background balls so it doesn't look like another ball remains
+      if ($balls) gsap.to($balls, { opacity: 0, duration: 0.2 });
+
       let rect = (prizeBall.dom as HTMLElement).getBoundingClientRect();
-      let x = (rect.x / window.innerHeight) * 100;
-      let y = (rect.y / window.innerHeight) * 100;
+      // Use correct axis for viewport units so the ball starts from the exact click position
+      let x = (rect.x / window.innerWidth) * 100; // -> vw
+      let y = (rect.y / window.innerHeight) * 100; // -> vh
       const container = document.querySelector(
         ".prize-container .prize-ball-container",
       ) as HTMLElement;
@@ -302,7 +310,7 @@ export default function Page() {
       (prizeBall.dom as HTMLElement).style.top = "0";
       // place the ball where it currently is, then animate it to screen center
       gsap.set(prizeBall.dom, {
-        x: `${x}vh`,
+        x: `${x}vw`,
         y: `${y}vh`,
         rotate,
         duration: 1,
@@ -386,6 +394,14 @@ export default function Page() {
             gsap.set(".prize-reward-container", { pointerEvents: "auto" });
           },
         });
+        // Remove prize-ball overlay container so it doesn't block the UI
+        const prizeBallContainer = document.querySelector(
+          ".prize-container .prize-ball-container",
+        ) as HTMLElement | null;
+        if (prizeBallContainer) {
+          prizeBallContainer.innerHTML = "";
+          gsap.set(prizeBallContainer, { display: "none" });
+        }
         // reveal claim button
         const btn = document.getElementById("claim-btn");
         if (btn) {
@@ -596,7 +612,7 @@ export default function Page() {
             </div>
           </div>
           <div className="absolute inset-0 prize-container">
-            <div className="absolute inset-0 prize-ball-container"></div>
+            <div className="absolute inset-0 z-[20] prize-ball-container"></div>
             <div className="absolute inset-0 z-[1] prize-reward-container">
               <div className="absolute inset-0 flex items-center justify-center shine">
                 <img
