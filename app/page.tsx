@@ -9,6 +9,8 @@ gsap.registerPlugin(RoughEase);
 
 export default function Page() {
   useEffect(() => {
+    const isMobile = window.innerWidth < 768; // Detect mobile
+
     const delay = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -163,7 +165,7 @@ export default function Page() {
       });
 
       const TITLE = "がんばれ!";
-      const PRICE = "100円";
+      const PRICE = "";
 
       $machine = document.querySelector(".machine-container") as HTMLElement;
       $handle = document.querySelector(
@@ -251,7 +253,7 @@ export default function Page() {
         new Promise<void>((resolve) => {
           const tl = gsap.timeline();
           gsap.to(prizeBall.dom, {
-            x: "-3svh",
+            x: "-0svh",
             ease: "none",
             duration: 0.5,
             rotate: prizeBall.rotate + 10,
@@ -490,8 +492,11 @@ export default function Page() {
       gsap.to($pointer, { opacity: 0, duration: 1 });
     };
     const showHint2 = () => {
+      const pointerPosition = isMobile
+        ? { x: "18vh", y: "8vh" }
+        : { x: "24vh", y: "10vh" };
       ($title.children[0] as HTMLElement).innerHTML = "Tap to claim it!";
-      gsap.set($pointer, { x: "16vh", y: "3vh" });
+      gsap.set($pointer, pointerPosition);
       gsap.to($title, { y: "80vh", duration: 1, ease: "back.out" });
       gsap.to($pointer, { opacity: 1, duration: 1, ease: "none" });
     };
@@ -558,6 +563,8 @@ export default function Page() {
         return ball;
       };
 
+      const prizeYPosition = isMobile ? 0.48 : 0.85; // Higher on mobile, lower on desktop
+      prizeBall = createBall(0.5, prizeYPosition);
       createBall(0.5, 0.6);
       createBall(0, 0.68);
       createBall(0.22, 0.65);
@@ -565,7 +572,7 @@ export default function Page() {
       createBall(0.96, 0.66);
       createBall(0.75, 0.79);
       createBall(0.5, 0.8);
-      prizeBall = createBall(0.55, 0.81);
+      // prizeBall = createBall(0.5, 0.85);
       createBall(0, 0.82);
       createBall(1, 0.9);
       createBall(0.25, 0.85);
@@ -631,7 +638,19 @@ export default function Page() {
       <div className="w-full h-full min-h-screen overflow-hidden relative">
         <div className="w-full h-full min-h-screen overflow-hidden flex items-center justify-center relative bg-[url(/assets/bg.jpg)] bg-cover bg-center bg-no-repeat game-layer">
           <div className="relative whitespace-nowrap machine-container">
-            <div className="absolute z-0 top-[65%] left-[48%] w-[15vh] h-[13vh] bg-[#e288bb]"></div>
+            <div className="absolute z-0 top-[70%] left-[40%] w-[15vh] h-[13vh] bg-[#5A7AAD]">
+              <svg
+                className="size-full"
+                viewBox="0 0 240 256"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M238.41 123.309C237.443 165.143 237.123 207.066 237.45 249.079C237.45 249.423 237.385 249.762 237.26 250.079C235.94 253.489 233.8 254.659 229.73 254.669C175.17 254.849 120.176 255.206 64.7498 255.739C64.8631 250.293 65.0564 244.849 65.3298 239.409C65.6564 232.789 65.7531 227.346 65.6198 223.079C65.3131 213.226 64.7064 204.973 63.7998 198.319C61.3064 180.059 57.9698 161.739 53.7898 143.359C51.7164 134.233 49.5465 125.969 47.2798 118.569C44.0898 108.129 41.3198 96.9995 37.0398 85.9395C34.5798 79.5728 32.2264 73.2761 29.9798 67.0495C27.4931 60.1761 24.4065 52.7728 20.7198 44.8394C14.7465 31.9928 11.3531 24.7295 10.5398 23.0495C8.47978 18.7695 5.86979 14.1195 4.20979 9.24945C4.01058 8.67835 3.74189 8.13425 3.40979 7.62945C1.97646 5.46278 0.849785 3.14945 0.0297852 0.689453C5.73645 0.742786 11.2265 0.776118 16.4998 0.789452C51.6465 0.902785 86.8965 0.95945 122.25 0.95945C133.076 0.95945 143.92 1.29278 154.78 1.95945C165.94 2.64945 174.78 2.13945 186.17 3.27945C192.79 3.94612 198.686 4.72612 203.86 5.61945C214.49 7.45945 222.09 14.6495 229.62 22.1195C231.15 23.6395 231.92 25.7394 232.39 28.0994C236.28 47.6894 239.29 59.2595 239.2 72.9995C239.093 89.0795 238.816 103.996 238.37 117.749C238.316 119.516 238.33 121.369 238.41 123.309Z"
+                  fill="#475F95"
+                />
+              </svg>
+            </div>
             <div className="absolute top-[22%] left-[2%] w-[96%] h-[34.5%] balls"></div>
             <img
               className="relative z-[10] max-h-[80vh] pointer-events-none"
@@ -645,7 +664,7 @@ export default function Page() {
               src="/assets/handle.svg"
               alt="Handle"
             />
-            <div className="absolute h-[15vh] top-[75%] left-[15%] z-[30] pointer-events-none pointer">
+            <div className="absolute h-[15vh] top-[75%] left-[10%] z-[30] pointer-events-none pointer">
               <img
                 className="h-full block origin-[0%_0%] -rotate-[30deg] animate-[click_1s_ease-in-out_infinite_both]"
                 src="/assets/point.svg"
