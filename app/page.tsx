@@ -233,7 +233,7 @@ export default function Page() {
         new Promise<void>((resolve) => {
           const tl = gsap.timeline();
           tl.to($handle, {
-            rotate: 90,
+            rotate: -90,
             duration: 0.3,
             ease: "power1.in",
             onComplete: () => {
@@ -251,43 +251,47 @@ export default function Page() {
         new Promise<void>((resolve) => {
           const tl = gsap.timeline();
           gsap.to(prizeBall.dom, {
-            x: "-3vh",
+            x: "-3svh",
             ease: "none",
             duration: 0.5,
             rotate: prizeBall.rotate + 10,
           });
           gsap.to(balls[3].dom, {
-            x: "1vh",
-            y: "1vh",
+            x: "1svh",
+            y: "1svh",
             ease: "none",
             duration: 0.5,
             rotate: balls[3].rotate - 5,
           });
           gsap.to(balls[4].dom, {
-            x: "-1vh",
-            y: "1vh",
+            x: "-1svh",
+            y: "1svh",
             ease: "none",
             duration: 0.5,
             rotate: balls[4].rotate - 5,
           });
           gsap.to(balls[5].dom, {
-            x: "1vh",
-            y: "1vh",
+            x: "1svh",
+            y: "1svh",
             ease: "none",
             duration: 0.5,
             rotate: balls[5].rotate - 5,
           });
-          tl.to(prizeBall.dom, { y: "12vh", ease: "power1.in", duration: 0.5 })
-            .to(prizeBall.dom, { y: "23vh", ease: "power1.in", duration: 0.5 })
-            .to(prizeBall.dom, { y: "22vh", ease: "power1.out", duration: 0.2 })
-            .to(prizeBall.dom, { y: "23vh", ease: "power1.in", duration: 0.2 })
+          tl.to(prizeBall.dom, { y: "12svh", ease: "power1.in", duration: 0.5 })
+            .to(prizeBall.dom, { y: "26svh", ease: "power1.in", duration: 0.5 })
             .to(prizeBall.dom, {
-              y: "22.5vh",
+              y: "24svh",
+              ease: "power1.out",
+              duration: 0.2,
+            })
+            .to(prizeBall.dom, { y: "26svh", ease: "power1.in", duration: 0.2 })
+            .to(prizeBall.dom, {
+              y: "24svh",
               ease: "power1.out",
               duration: 0.1,
             })
             .to(prizeBall.dom, {
-              y: "23vh",
+              y: "26svh",
               ease: "power1.in",
               duration: 0.1,
               onComplete: resolve,
@@ -434,7 +438,9 @@ export default function Page() {
           },
         });
         // Lazy-load the shine image at reveal time to avoid initial request
-        const shine = document.getElementById("shine-img") as HTMLImageElement | null;
+        const shine = document.getElementById(
+          "shine-img",
+        ) as HTMLImageElement | null;
         if (shine && !shine.getAttribute("src")) {
           const ds = shine.getAttribute("data-src");
           if (ds) shine.setAttribute("src", ds);
@@ -559,7 +565,7 @@ export default function Page() {
       createBall(0.96, 0.66);
       createBall(0.75, 0.79);
       createBall(0.5, 0.8);
-      prizeBall = createBall(0.9, 0.81);
+      prizeBall = createBall(0.55, 0.81);
       createBall(0, 0.82);
       createBall(1, 0.9);
       createBall(0.25, 0.85);
@@ -635,14 +641,14 @@ export default function Page() {
             <div className="absolute top-[10%] w-full text-center text-[5vh] z-[15] drop-shadow title"></div>
             <div className="absolute z-[15] text-[2.5vh] top-[80%] left-[15%] text-[#fb91c9] price"></div>
             <img
-              className="absolute z-[20] h-[3.9vh] left-[13%] top-[69%] handle"
+              className="absolute z-[20] h-[8%] left-[13%] top-[69%] handle opacity-50"
               src="/assets/handle.svg"
               alt="Handle"
             />
             <div className="absolute h-[15vh] top-[75%] left-[15%] z-[30] pointer-events-none pointer">
               <img
                 className="h-full block origin-[0%_0%] -rotate-[30deg] animate-[click_1s_ease-in-out_infinite_both]"
-                src="/assets/point.png"
+                src="/assets/point.svg"
                 alt="Pointer"
               />
             </div>
